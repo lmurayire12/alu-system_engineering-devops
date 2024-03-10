@@ -1,41 +1,30 @@
 #!/usr/bin/env bash
+# Update the package list
 
-# Update packages
-sudo apt-get update -y
+sudo apt-get update
 
 # Install nginx
-sudo apt-get install -y nginx
+sudo apt-get install nginx -y
 
-# Create a new directory for the Holberton School page
-sudo mkdir -p /var/www/holberton_school
+# Configure nginx to listen on port 80
+sudo sed -i 's/listen 80 default_server/listen 80/g' /etc/nginx/sites-available/default
 
-# Create a new file for the Holberton School page
-sudo touch /var/www/holberton_school/index.html
-
-# Write the Holberton School page content to the file
-sudo echo "<html><head><title>Holberton School</title></head><body><h1>Holberton School for the win!</h1></body></html>" > /var/www/holberton_school/index.html
-
-# Change the owner of the new directory and file to www-data
-sudo chown -R www-data:www-data /var/www/holberton_school
-
-# Configure nginx to serve the Holberton School page
-sudo rm /etc/nginx/sites-available/default
-sudo echo "server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-
-    root /var/www/holberton_school;
-    index index.html index.htm index.nginx-debian.html;
-
-    server_name _;
-
-    location / {
-        try_files $uri $uri/ =404;
-    }
-}" > /etc/nginx/sites-available/holberton_school
-
-# Create a symbolic link to enable the new configuration
-sudo ln -s /etc/nginx/sites-available/holberton_school /etc/nginx/sites-enabled/
-
-# Restart nginx to apply the changes
+# Restart nginx
 sudo service nginx restart
+
+# Create a sample HTML file containing the string "Holberton School"
+echo "<html><body>Holberton School</body></html>" | sudo tee /var/www/html/index.html >/dev/null
+
+# Test the nginx configuration
+curl -sI 127.0.0.1 | grep "HTTP/1.1 200 OK" >/dev/null
+
+if [ $? -eq 0 ]; then
+  curl 127.0.0.1 | grep "Holberton School" >/dev/null
+  if [ $? -eq 0 ]; then
+    echo "Configuration successful!"
+    exit 0
+  fi
+fi
+
+echo "Something went wrong :("
+exit 1
